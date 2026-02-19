@@ -1,4 +1,4 @@
-# tunnel-relay
+# cloudflared-relay
 
 Local Flask server tunneled via Cloudflare Tunnel. Receives files from GitHub Actions, processes them locally, and returns results.
 
