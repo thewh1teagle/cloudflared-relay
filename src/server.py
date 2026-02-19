@@ -1,14 +1,18 @@
-import subprocess, re, threading, os, sys, time, logging, secrets
+import subprocess, threading, os, sys, logging, secrets
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 import click
+
+load_dotenv()
 
 # suppress all flask/werkzeug output
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
-
 app = Flask(__name__)
 SECRET = os.environ.get("TUNNEL_SECRET") or secrets.token_urlsafe(32)
+TUNNEL_URL = os.environ["TUNNEL_URL"]
+CF_TOKEN = os.environ["CF_TUNNEL_TOKEN"]
 
 @app.route("/submit", methods=["POST"])
 def filesize():
@@ -18,19 +22,12 @@ def filesize():
     data = file.read()
     return jsonify({"filename": file.filename, "size": len(data)})
 
-def start_tunnel(local_port=8080):
+def start_tunnel():
     proc = subprocess.Popen(
-        ["ssh", "-T", "-R", f"80:localhost:{local_port}", "-o", "StrictHostKeyChecking=no", "serveo.net"],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        ["cloudflared", "tunnel", "run", "--token", CF_TOKEN],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
-    for line in proc.stdout:
-        text = line.decode().replace('\r', '').strip()
-        match = re.search(r'https://\S+', text)
-        if match and 'console.serveo.net' not in match.group():
-            # drain remaining output in background
-            threading.Thread(target=proc.stdout.read, daemon=True).start()
-            return proc, match.group()
-    raise RuntimeError("Failed to get tunnel URL")
+    return proc
 
 def main():
     tunnel = None
@@ -39,22 +36,19 @@ def main():
             target=lambda: app.run(port=8080, use_reloader=False),
             daemon=True
         ).start()
-        time.sleep(0.5)
-        sys.stdout.write("Starting tunnel...\n")
-        sys.stdout.flush()
-        tunnel, url = start_tunnel()
+        print("Starting tunnel...")
+        tunnel = start_tunnel()
         msg = (
-            f"\nTunnel ready! Listening at: {url}\n"
+            f"\nTunnel ready! Listening at: {TUNNEL_URL}\n"
             f"\n"
             f"To use from another machine:\n"
-            f"  export TUNNEL_URL={url}\n"
+            f"  export TUNNEL_URL={TUNNEL_URL}\n"
             f"  export TUNNEL_SECRET={SECRET}\n"
             f"  uv run src/client.py\n"
             f"\n"
             f"Press Ctrl+C to stop\n"
         )
-        sys.stdout.write(msg)
-        sys.stdout.flush()
+        print(msg)
         tunnel.wait()
     except KeyboardInterrupt:
         print("\nShutting down...")

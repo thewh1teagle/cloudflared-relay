@@ -12,7 +12,6 @@ response = requests.post(
     f"{TUNNEL_URL.rstrip('/')}/submit",
     files={"file": ("dummy.txt", io.BytesIO(dummy_content))},
     headers={
-        "serveo-skip-browser-warning": "true",
         "X-Tunnel-Secret": os.environ.get("TUNNEL_SECRET", ""),
     },
 )
