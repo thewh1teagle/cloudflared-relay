@@ -24,7 +24,7 @@ Local Flask server tunneled via Cloudflare Tunnel. Receives files from GitHub Ac
 
 ### 2. Configure `.env`
 
-```
+```console
 CP_TUNNEL_TOKEN=<your-cloudflare-tunnel-token>
 TUNNEL_SECRET=<any-random-secret>
 TUNNEL_URL=https://<your-subdomain>.<your-domain>
@@ -34,13 +34,13 @@ Generate a secret: `uv run python -c "import secrets; print(secrets.token_urlsaf
 
 ### 3. Run
 
-```bash
+```console
 uv run src/server.py
 ```
 
 ### 4. Test from another machine
 
-```bash
+```console
 export TUNNEL_URL=https://<your-subdomain>.<your-domain>
 export TUNNEL_SECRET=<same-secret-as-server>
 uv run src/client.py
