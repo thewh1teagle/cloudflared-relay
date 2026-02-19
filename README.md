@@ -45,3 +45,15 @@ export TUNNEL_URL=https://<your-subdomain>.<your-domain>
 export TUNNEL_SECRET=<same-secret-as-server>
 uv run src/client.py
 ```
+
+## Optional: Rate Limiting
+
+To protect against brute force attacks on the endpoint:
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) > your domain > Security > WAF
+2. Create a rate limiting rule with expression:
+   ```
+   (http.host eq "<your-subdomain>.<your-domain>" and http.request.uri.path eq "/submit")
+   ```
+   - Rate: 50 requests per 10 seconds
+   - Action: Block
